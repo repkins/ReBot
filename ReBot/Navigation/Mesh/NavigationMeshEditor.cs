@@ -1,11 +1,14 @@
-﻿using Interactables.Interobjects;
+﻿using DrawableLine;
+using Interactables.Interobjects;
 using Interactables.Interobjects.DoorUtils;
 using MapGeneration;
 using MEC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.AI.Navigation;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace ReBot.Navigation.Mesh
 {
@@ -552,6 +555,32 @@ namespace ReBot.Navigation.Mesh
                 Visuals.PlayerEnabledVisualsFor = PlayerEditing;
 
                 Debug.Log($"Visuals.PlayerEnabledVisualsFor.DisplayNickname = {Visuals.PlayerEnabledVisualsFor?.DisplayName}");
+            }
+
+            if (PlayerEditing != null)
+            {
+                var triangulation = NavMesh.CalculateTriangulation();
+                for (int idx = 0; idx < triangulation.indices.Length; idx += 3)
+                {
+                    Span<int> vertexIndices = [
+                        triangulation.indices[idx + 0],
+                        triangulation.indices[idx + 1],
+                        triangulation.indices[idx + 2],
+                    ];
+                    Vector3[] vertexPositions = [
+                        triangulation.vertices[vertexIndices[0]],
+                        triangulation.vertices[vertexIndices[1]],
+                        triangulation.vertices[vertexIndices[2]],
+                        triangulation.vertices[vertexIndices[0]]
+                    ];
+
+                    if (Vector3.Distance(vertexPositions[0], PlayerEditing.Position) > 10f)
+                    {
+                        continue;
+                    }
+
+                    DrawableLines.GenerateLine(vertexPositions);
+                }
             }
         }
 

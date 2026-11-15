@@ -72,7 +72,16 @@
     <Reference Include="UnityEngine.PhysicsModule">
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Unity.Collections">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AIModule">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.AI.Navigation">
       <Private>false</Private>
     </Reference>
     <Reference Include="mscorlib" />
