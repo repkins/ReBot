@@ -1,0 +1,22 @@
+﻿using System;
+using UnityEngine;
+
+namespace ReBot.Navigation.Mesh
+{
+    [Obsolete]
+    internal record struct TransformVertex(Vertex Local, Transform Transform)
+    {
+        public readonly Vector3 Position => Transform.TransformPoint(Local.Position);
+
+        [Obsolete]
+        public static bool operator ==(TransformVertex? left, TransformVertex right)
+        {
+            throw new NotSupportedException();
+        }
+        [Obsolete]
+        public static bool operator !=(TransformVertex? left, TransformVertex right)
+        {
+            throw new NotSupportedException();
+        }
+    }
+}
