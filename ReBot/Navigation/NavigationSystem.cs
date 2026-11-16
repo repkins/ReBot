@@ -1,10 +1,14 @@
-﻿using LabApi.Events.Arguments.ServerEvents;
+﻿using Interactables.Interobjects;
+using Interactables.Interobjects.DoorUtils;
+using LabApi.Events.Arguments.ServerEvents;
 using LabApi.Events.Handlers;
 using MapGeneration;
+using MapGeneration.StaticHelpers;
 using MEC;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
+using System.Text;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -62,6 +66,21 @@ namespace ReBot.Navigation
 
         public void InitializeMeshes()
         {
+            Debug.Log($"Adding NavMeshModifiers to doors for exclusion");
+
+            var stringBuilder = new StringBuilder();
+            foreach (var door in DoorVariant.AllDoors)
+            {
+                if (door is CheckpointDoor)
+                {
+                    continue;
+                }
+
+                var doorGameObject = door.gameObject;
+                var navMeshModifier = doorGameObject.AddComponent<NavMeshModifier>();
+                navMeshModifier.ignoreFromBuild = true;
+            }
+
             Debug.Log($"Building navigation mesh.");
 
             var mapgenRoot = GameObject.Find("MapgenRoot");
@@ -70,7 +89,35 @@ namespace ReBot.Navigation
             navMeshSurface.collectObjects = CollectObjects.All;
             navMeshSurface.BuildNavMesh();
 
-            Debug.Log($"Building navigation mesh done.");
+            Debug.Log($"Adding door obstacles.");
+            foreach (var door in DoorVariant.AllDoors)
+            {
+                if (door is CheckpointDoor or ElevatorDoor)
+                {
+                    continue;
+                }
+
+                if (door.Rooms.Length == 2)
+                {
+                    var doorCenterPosition = door.transform.position + Vector3.up;  // assuming pivot point is located at the bottom of all doors
+
+                    // Add to obstacles
+                    var doorInstanceId = door.GetInstanceID();
+                    NavigationStore.SolidObstaclesByInstancedIds.Add(doorInstanceId, (door.transform, default));
+                }
+                else
+                {
+                    var emergencyRelease = door.Rooms[0].GetComponentsInChildren<DynamicChildController>()
+                        .Where(c => c.Child)
+                        .Select(c => c.Child.GetComponentInChildren<EmergencyDoorRelease>())
+                        .FirstOrDefault(c => c && Vector3.Distance(c.transform.position, door.transform.position) < 5f);
+
+                    Debug.Log($"{door.Rooms[0].gameObject.name}, {door.gameObject.name}, {door.RequiredPermissions.RequiredPermissions}, {emergencyRelease?.gameObject.name}");
+
+                    var doorInstanceId = door.GetInstanceID();
+                    NavigationStore.SolidObstaclesByInstancedIds.Add(doorInstanceId, (door.transform, emergencyRelease));
+                }
+            }
 
             OnMeshesConnected?.Invoke();
         }
@@ -83,10 +130,9 @@ namespace ReBot.Navigation
             var navMeshSurface = mapgenRoot.gameObject.GetComponent<NavMeshSurface>();
             if (navMeshSurface)
             {
+                navMeshSurface.RemoveData();
                 UnityEngine.Object.Destroy(navMeshSurface);
             }
-
-            Debug.Log($"Resetting navigation mesh done.");
 
             OnMeshesReset?.Invoke();
         }

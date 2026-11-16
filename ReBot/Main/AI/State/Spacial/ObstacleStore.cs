@@ -11,12 +11,16 @@ namespace ReBot.Main.AI.State.Spacial;
 internal struct ObstacleStore() : IDisposable
 {
     public static readonly NativeList<Vector3> ObstacleLocations = new(Allocator.Persistent);
-    public static readonly NativeHashMap<int, ObstacleRef> ObstaclesByInstanceId = new(8, Allocator.Persistent);
     public static readonly NativeList<DoorPermissionFlags> DoorObstaclePermissions = new(Allocator.Persistent);
     public static readonly NativeList<bool> DoorObstacleEmergencyReleaseHasPositions = new(Allocator.Persistent);
     public static readonly NativeList<Vector3> DoorObstacleEmergencyReleasePositions = new(Allocator.Persistent);
 
+    public static readonly NativeHashMap<int, ObstacleRef> ObstaclesByInstanceId = new(8, Allocator.Persistent);
+    public static readonly Dictionary<ObstacleRef, int> InstanceIdsByObstacle = [];
+
+    [Obsolete]
     internal static readonly Dictionary<TransformCell, ObstacleRef> ObstaclesByCell = [];
+    [Obsolete]
     internal static readonly Dictionary<ObstacleRef, TransformCell> CellsByObstacle = [];
 
     public static readonly NativeList<ObstacleRef> ElevationObstacles = new(Allocator.Persistent);

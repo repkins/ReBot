@@ -94,7 +94,7 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
     {
         Debug.Log("Updating bot static state");
 
-        foreach (var (cell, (solidObstacleTransform, emergencyRelease)) in NavigationMesh.CellsWithSolidObstacles)
+        foreach (var (instanceId, (solidObstacleTransform, emergencyRelease)) in NavigationStore.SolidObstaclesByInstancedIds)
         {
             var obstacleRef = new ObstacleRef(ObstacleStore.ObstacleLocations.Length);
             var obstaclePosition = solidObstacleTransform.position + Vector3.up;
@@ -105,9 +105,8 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
             ObstacleStore.DoorObstaclePermissions.Add(doorObstaclePermissions);
             ObstacleStore.DoorObstacleEmergencyReleaseHasPositions.Add(doorObstacleEmergencyReleaseLocation.HasValue);
             ObstacleStore.DoorObstacleEmergencyReleasePositions.Add(doorObstacleEmergencyReleaseLocation ?? default);
-            ObstacleStore.ObstaclesByInstanceId.Add(doorVariant.GetInstanceID(), obstacleRef);
-            ObstacleStore.ObstaclesByCell.Add(cell, obstacleRef);
-            ObstacleStore.CellsByObstacle.Add(obstacleRef, cell);
+            ObstacleStore.ObstaclesByInstanceId.Add(instanceId, obstacleRef);
+            ObstacleStore.InstanceIdsByObstacle.Add(obstacleRef, instanceId);
         }
 
         foreach (var (toCell, fromCell, toCallPanel, travelPanel) in NavigationMesh.ElevationObstacles)
