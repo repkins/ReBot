@@ -16,7 +16,6 @@ namespace ReBot.Navigation
         public static readonly NavigationSystem Instance = new();
 
         public string BaseDir { get; set; }
-        public string MeshAssetBundleName { get; } = "navmeshes";
         public bool Initialized { get; private set; } = false;
         public event Action OnMeshesConnected;
         public event Action OnMeshesReset;
@@ -28,7 +27,7 @@ namespace ReBot.Navigation
 
             if (SeedSynchronizer.MapGenerated)
             {
-                LoadConnectMeshes();
+                InitializeMeshes();
             }
 
             Initialized = true;
@@ -58,53 +57,38 @@ namespace ReBot.Navigation
         {
             yield return Timing.WaitUntilTrue(() => SeedSynchronizer.MapGenerated);
 
-            LoadConnectMeshes();
+            InitializeMeshes();
         }
 
-        public void LoadConnectMeshes()
+        public void InitializeMeshes()
         {
-            Debug.Log($"Initializing meshes.");
-            var mapgenRoot = GameObject.Find("MapgenRoot");
+            Debug.Log($"Building navigation mesh.");
 
+            var mapgenRoot = GameObject.Find("MapgenRoot");
             var navMeshSurface = mapgenRoot.AddComponent<NavMeshSurface>();
             navMeshSurface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             navMeshSurface.collectObjects = CollectObjects.All;
             navMeshSurface.BuildNavMesh();
+
+            Debug.Log($"Building navigation mesh done.");
 
             OnMeshesConnected?.Invoke();
         }
 
         public void ResetMeshes()
         {
-            Debug.Log($"Resetting meshes.");
+            Debug.Log($"Resetting navigation mesh.");
 
-            foreach (var room in RoomIdentifier.AllRoomIdentifiers)
+            var mapgenRoot = GameObject.Find("MapgenRoot");
+            var navMeshSurface = mapgenRoot.gameObject.GetComponent<NavMeshSurface>();
+            if (navMeshSurface)
             {
-                var navMeshSurface = room.gameObject.GetComponent<NavMeshSurface>();
-                if (navMeshSurface)
-                {
-                    UnityEngine.Object.Destroy(navMeshSurface);
-                }
+                UnityEngine.Object.Destroy(navMeshSurface);
             }
 
+            Debug.Log($"Resetting navigation mesh done.");
+
             OnMeshesReset?.Invoke();
-        }
-
-        [Obsolete]
-        public void SaveMeshes(string fileName)
-        {
-            var path = Path.Combine(BaseDir, fileName);
-
-            using var fileStream = File.Open(path, FileMode.Create, FileAccess.Write);
-            using var binaryWriter = new BinaryWriter(fileStream);
-
-            //NavigationMesh.WriteMeshes(binaryWriter);
-        }
-
-        public static string GetName(GameObject gameObject)
-        {
-            var gameObjectName = gameObject?.name;
-            return (gameObjectName?.EndsWith("(Clone)") ?? false) ? gameObjectName.Remove(gameObjectName.LastIndexOf("(Clone)")) : gameObjectName;
         }
     }
 }

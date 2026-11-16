@@ -1,19 +1,18 @@
 ﻿using CommandSystem;
-using PlayerRoles;
+using LabApi.Features.Wrappers;
 using RemoteAdmin;
-using ReBot.Navigation.Mesh;
 using System;
 
 namespace ReBot.Navigation.Commands
 {
-    [CommandHandler(typeof(NavVertex))]
-    internal class NavVertexSelectClearCommand : ICommand
+    [CommandHandler(typeof(Nav))]
+    internal class NavVisualizeCommand : ICommand
     {
-        public string Command { get; } = "select_clear";
+        public string Command { get; } = "visualize";
 
-        public string[] Aliases { get; } = new string[] { "nvsc" };
+        public string[] Aliases { get; } = [];
 
-        public string Description { get; } = "Clears navigation mesh vertex selection.";
+        public string Description { get; } = "Toggles visalization of baked navigation mesh.";
 
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
@@ -28,15 +27,16 @@ namespace ReBot.Navigation.Commands
                 return false;
             }
 
-            if (!playerCommandSender.ReferenceHub.IsAlive())
+            if (NavigationVisualizer.Player == null)
             {
-                response = "Command disabled when you are not alive!";
-                return false;
+                NavigationVisualizer.Enable(Player.Get(playerCommandSender));
+            }
+            else
+            {
+                NavigationVisualizer.Disable();
             }
 
-            NavigationMeshEditor.Instance.ClearVertexSelection();
-
-            response = $"Vertex selection cleared.";
+            response = $"Nav visualization is now for {NavigationVisualizer.Player}.";
             return true;
         }
     }

@@ -9,7 +9,6 @@ using Mirror.LiteNetLib4Mirror;
 using PlayerRoles;
 using ReBot.Main.AI;
 using ReBot.Navigation;
-using ReBot.Navigation.Mesh;
 using System;
 using System.IO;
 using System.Reflection;
@@ -38,7 +37,6 @@ internal class LabApiPlugin : Plugin
             Directory.CreateDirectory(NavigationSystem.Instance.BaseDir);
         }
         NavigationSystem.Instance.Init();
-        NavigationMeshEditor.Instance.Init();
 
         BotSystem.Initalize();
 
@@ -70,7 +68,6 @@ internal class LabApiPlugin : Plugin
 
         BotSystem.Teardown();
 
-        NavigationMeshEditor.Instance.Teardown();
         NavigationSystem.Instance.Teardown();
 
         harmonyInstance.UnpatchAll();

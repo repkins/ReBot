@@ -5,13 +5,13 @@ using System;
 namespace ReBot.Navigation.Commands
 {
     [CommandHandler(typeof(Nav))]
-    internal class NavSaveCommand : ICommand
+    internal class NavReinitCommand : ICommand
     {
-        public string Command { get; } = "save";
+        public string Command { get; } = "reinit";
 
-        public string[] Aliases { get; } = new string[] { };
+        public string[] Aliases { get; } = [];
 
-        public string Description { get; } = "Saves navigation mesh to storage.";
+        public string Description { get; } = "Resets, then initializes navigation system.";
 
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
@@ -26,9 +26,10 @@ namespace ReBot.Navigation.Commands
                 return false;
             }
 
-            //NavigationSystem.Instance.SaveMeshes(NavigationSystem.Instance.MeshFileName);
+            NavigationSystem.Instance.ResetMeshes();
+            NavigationSystem.Instance.InitializeMeshes();
 
-            response = $"Navigation mesh saved.";
+            response = $"Navigation system reinitialized.";
             return true;
         }
     }
