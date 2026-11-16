@@ -11,12 +11,13 @@ namespace ReBot.Navigation.Commands
 
         public override string[] Aliases { get; } = new string[] { };
 
-        public override string Description { get; } = "Manipulates navigation mesh build system.";
+        public override string Description { get; } = "Navigation commands.";
 
         public override void LoadGeneratedCommands()
         {
             this.RegisterCommand(new NavVisualizeCommand());
             this.RegisterCommand(new NavReinitCommand());
+            this.RegisterCommand(new NavTraceCommand());
             //this.RegisterCommand(new NavCell());
         }
 

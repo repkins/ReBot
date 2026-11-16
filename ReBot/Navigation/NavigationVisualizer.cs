@@ -11,21 +11,25 @@ namespace ReBot.Navigation;
 internal static class NavigationVisualizer
 {
     public static Player Player { get; private set; }
+    public static Vector3? CachedPosition { get; set; }
+    public static NavMeshPath TracePath { get; } = new NavMeshPath();
 
     private static CoroutineHandle handle;
+    private static CoroutineHandle handle2;
 
     public static void Enable(Player player)
     {
         Player = player;
 
         handle = Timing.RunCoroutine(RunOncePerSecond(UpdateTriangulation));
+        handle2 = Timing.RunCoroutine(RunOncePerSecond(UpdatePath));
     }
 
     public static void Disable()
     {
         Player = null;
 
-        Timing.KillCoroutines(handle);
+        Timing.KillCoroutines(handle, handle2);
     }
 
     private static void UpdateTriangulation()
@@ -52,6 +56,16 @@ internal static class NavigationVisualizer
 
             DrawableLines.GenerateLine(1f, vertexPositions);
         }
+    }
+
+    private static void UpdatePath()
+    {
+        if (TracePath.corners.Length < 2)
+        {
+            return;
+        }
+
+        DrawableLines.GenerateLine(1f, Color.blue, TracePath.corners);
     }
 
     private static IEnumerator<float> RunEachFrame(Action action)
