@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace ReBot.Main.AI.State.Movement.Pathfinding;
 
@@ -19,10 +20,13 @@ internal static class PathfindingStore
     public static readonly List<TransformCell?> CellWithins = [];
     public static readonly List<TransformCell?> PrevCellWithins = [];
 
+    public static readonly List<NavMeshPath> NavMeshPaths = [];
+
     public static void AddBot(BotRef botRef)
     {
         GoalPositions.Add(default);
 
+        NavMeshPaths.Add(new NavMeshPath());
         CellsPath.Add([]);
         CellPathSegments.Add(CellsPath[botRef.Idx].Zip(CellsPath[botRef.Idx].Skip(1), (cell, nextCell) => (cell, nextCell)));
 
@@ -37,6 +41,7 @@ internal static class PathfindingStore
 
         CellPathSegments.RemoveAt(botRef.Idx);
         CellsPath.RemoveAt(botRef.Idx);
+        NavMeshPaths.RemoveAt(botRef.Idx);
 
         GoalPositions.RemoveAt(botRef.Idx);
     }
