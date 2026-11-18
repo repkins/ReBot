@@ -11,6 +11,6 @@ internal static class NavMeshPatches
     static void GetBuildSettings_Postfix(ref NavMeshBuildSettings __result)
     {
         __result.agentRadius = 0.3f;
-        __result.agentClimb = 0.2f;
+        __result.agentClimb = 0.4f;
     }
 }

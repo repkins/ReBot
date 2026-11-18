@@ -33,14 +33,14 @@ internal struct RoomPerception(int botCount)
                 {
                     var connectionPosition = NavigationStore.ConnectionsByRoomPair[(roomWithin, connectedRoom)];
                     var roomDirection = Vector3.Normalize(connectedRoom.transform.position - roomWithin.transform.position);
-                    var roomEnterPosition = connectionPosition + roomDirection * 2f;
+                    var roomEnterPosition = connectionPosition + roomDirection * 1f;
                     var roomExitPosition = connectionPosition - roomDirection * 1f;
 
                     bot.RoomStore.RoomEnterInstanceIds.Add(connectedRoom.GetInstanceID());
                     bot.RoomStore.RoomEnterLocations.Add(roomEnterPosition);
                     bot.RoomStore.RoomExitLocations.Add(roomExitPosition);
 
-                    var roomExitIsWithin = Vector3.SqrMagnitude(playerPosition - roomExitPosition) < Mathf.Pow(2f + 2f, 2f);
+                    var roomExitIsWithin = Vector3.SqrMagnitude(playerPosition - connectionPosition) < Mathf.Pow(2f, 2f);
                     bot.RoomStore.RoomExitIsWithins.Add(roomExitIsWithin);
 
                     var roomIsElevation = false;

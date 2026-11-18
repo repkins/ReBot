@@ -1,5 +1,4 @@
-﻿using ReBot.Navigation.Mesh;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -11,8 +10,6 @@ internal static class PathfindingStore
 
     public static readonly List<Vector3> GoalPositions = [];
 
-    public static readonly List<List<TransformCell>> CellsPath = [];
-
     public static readonly List<NavMeshPath> NavMeshPaths = [];
 
     public static void AddBot(BotRef botRef)
@@ -20,12 +17,10 @@ internal static class PathfindingStore
         GoalPositions.Add(default);
 
         NavMeshPaths.Add(new NavMeshPath());
-        CellsPath.Add([]);
     }
 
     public static void RemoveBot(BotRef botRef)
     {
-        CellsPath.RemoveAt(botRef.Idx);
         NavMeshPaths.RemoveAt(botRef.Idx);
 
         GoalPositions.RemoveAt(botRef.Idx);

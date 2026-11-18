@@ -250,33 +250,36 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
         for (int botIdx = 0; botIdx < botCount; botIdx++)
         {
             var currentGoalPos = PathfindingStore.GoalPositions[botIdx];
-            var cellsPath = PathfindingStore.CellsPath[botIdx];
 
-            for (int cellIdx = cellsPath.Count - 1; cellIdx >= 0; cellIdx--)
+            var navMeshPath = PathfindingStore.NavMeshPaths[botIdx];
+            var navMeshCorners = navMeshPath.corners;
+            for (int idx = navMeshCorners.Length - 1; idx >= 1; idx--)
             {
-                TransformCell cell = cellsPath[cellIdx];
-                TransformCell? prevCell = cellIdx > 0 ? cellsPath[cellIdx - 1] : null;
+                var cornerPosition = navMeshCorners[idx];
+                var prevCornerPosition = navMeshCorners[idx - 1];
 
-                if (ObstacleStore.ObstaclesByCell.TryGetValue(cell, out var obstacleRef))
+                if (Physics.Linecast(prevCornerPosition, cornerPosition, out var hitInfo, LayerMask.GetMask("Door"))
+                    && hitInfo.collider.GetComponentInParent<DoorVariant>() is DoorVariant door
+                    && ObstacleStore.ObstaclesByInstanceId.TryGetValue(door.GetInstanceID(), out var obstacleRef))
                 {
                     if (ObstacleStore.ElevationObstacles.IndexOf(obstacleRef) is var elevationIdx && elevationIdx > -1)
                     {
-                        if (prevCell.HasValue &&
-                            !prevCell.Value.AdjacentCellEdges.ContainsKey(cell) &&
-                            !NavigationMesh.ForeignConnectedCellEdges[prevCell.Value].ContainsKey(cell))
-                        {
-                            var travelObstacleRef = ObstacleStore.ElevationTravelObstacles[elevationIdx];
-                            obstacleBots[botIdx].AddElevationTravelObstacle(travelObstacleRef, currentGoalPos);
-                        }
-                        else
-                        {
-                            if (prevCell.HasValue)
-                            {
-                                var callObstacleRef = ObstacleStore.ElevationCallObstacles[elevationIdx];
-                                var obstaclePosition = ObstacleStore.ObstacleLocations[callObstacleRef.Idx];
-                                obstacleBots[botIdx].AddElevationCallObstacle(callObstacleRef, currentGoalPos, obstaclePosition);
-                            }
-                        }
+                        //if (prevCell.HasValue &&
+                        //    !prevCell.Value.AdjacentCellEdges.ContainsKey(cell) &&
+                        //    !NavigationMesh.ForeignConnectedCellEdges[prevCell.Value].ContainsKey(cell))
+                        //{
+                        //    var travelObstacleRef = ObstacleStore.ElevationTravelObstacles[elevationIdx];
+                        //    obstacleBots[botIdx].AddElevationTravelObstacle(travelObstacleRef, currentGoalPos);
+                        //}
+                        //else
+                        //{
+                        //    if (prevCell.HasValue)
+                        //    {
+                        //        var callObstacleRef = ObstacleStore.ElevationCallObstacles[elevationIdx];
+                        //        var obstaclePosition = ObstacleStore.ObstacleLocations[callObstacleRef.Idx];
+                        //        obstacleBots[botIdx].AddElevationCallObstacle(callObstacleRef, currentGoalPos, obstaclePosition);
+                        //    }
+                        //}
                     }
                     else
                     {
@@ -400,8 +403,8 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
                         continue;
                     }
 
-                    var cellInPath = ObstacleStore.CellsByObstacle[obstacleRef];
-                    var (obstacleTransform, _) = NavigationMesh.CellsWithSolidObstacles[cellInPath];
+                    var instanceId = ObstacleStore.InstanceIdsByObstacle[obstacleRef];
+                    var (obstacleTransform, _) = NavigationStore.SolidObstaclesByInstancedIds[instanceId];
                     if (!obstacleTransform.gameObject.GetComponentsInChildren<Collider>().Contains(hit.collider))
                     {
                         continue;
