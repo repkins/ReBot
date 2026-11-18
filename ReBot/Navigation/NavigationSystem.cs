@@ -77,16 +77,31 @@ namespace ReBot.Navigation
                 }
 
                 var doorGameObject = door.gameObject;
+
                 var navMeshModifier = doorGameObject.AddComponent<NavMeshModifier>();
                 navMeshModifier.ignoreFromBuild = true;
             }
-
-            Debug.Log($"Building navigation mesh.");
 
             var mapgenRoot = GameObject.Find("MapgenRoot");
             var navMeshSurface = mapgenRoot.AddComponent<NavMeshSurface>();
             navMeshSurface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             navMeshSurface.collectObjects = CollectObjects.All;
+            navMeshSurface.layerMask = LayerMask.GetMask("Default", "Fence", "Glass");
+
+            Debug.Log($"navMeshSurface.useGeometry = {navMeshSurface.useGeometry}");
+            Debug.Log($"navMeshSurface.collectObjects = {navMeshSurface.collectObjects}");
+            Debug.Log($"navMeshSurface.layerMask = {navMeshSurface.layerMask}");
+
+            var buildSettings = navMeshSurface.GetBuildSettings();
+            Debug.Log($"buildSettings.agentRadius = {buildSettings.agentRadius}");
+            Debug.Log($"buildSettings.agentHeight = {buildSettings.agentHeight}");
+            Debug.Log($"buildSettings.agentClimb = {buildSettings.agentClimb}");
+            Debug.Log($"buildSettings.agentSlope = {buildSettings.agentSlope}");
+            Debug.Log($"buildSettings.ledgeDropHeight = {buildSettings.ledgeDropHeight}");
+            Debug.Log($"buildSettings.maxJumpAcrossDistance = {buildSettings.maxJumpAcrossDistance}");
+            Debug.Log($"buildSettings.minRegionArea = {buildSettings.minRegionArea}");
+
+            Debug.Log($"Building navigation mesh.");
             navMeshSurface.BuildNavMesh();
 
             Debug.Log($"Adding door obstacles.");
@@ -104,6 +119,10 @@ namespace ReBot.Navigation
                     // Add to obstacles
                     var doorInstanceId = door.GetInstanceID();
                     NavigationStore.SolidObstaclesByInstancedIds.Add(doorInstanceId, (door.transform, default));
+
+                    // Add to connections
+                    NavigationStore.ConnectionsByRoomPair.Add((door.Rooms[0], door.Rooms[1]), doorCenterPosition);
+                    NavigationStore.ConnectionsByRoomPair.Add((door.Rooms[1], door.Rooms[0]), doorCenterPosition);
                 }
                 else
                 {
@@ -117,6 +136,16 @@ namespace ReBot.Navigation
                     var doorInstanceId = door.GetInstanceID();
                     NavigationStore.SolidObstaclesByInstancedIds.Add(doorInstanceId, (door.transform, emergencyRelease));
                 }
+            }
+
+            Debug.Log($"Adding connections between rooms.");
+            foreach (var connector in RoomConnector.AllConnectors)
+            {
+                var connectionPosition = connector.transform.position + Vector3.up;  // assuming pivot point is located at the bottom of all connectors
+
+                // Add to connections
+                NavigationStore.ConnectionsByRoomPair.Add((connector.Rooms[0], connector.Rooms[1]), connectionPosition);
+                NavigationStore.ConnectionsByRoomPair.Add((connector.Rooms[1], connector.Rooms[0]), connectionPosition);
             }
 
             OnMeshesConnected?.Invoke();
@@ -133,6 +162,9 @@ namespace ReBot.Navigation
                 navMeshSurface.RemoveData();
                 UnityEngine.Object.Destroy(navMeshSurface);
             }
+
+            NavigationStore.SolidObstaclesByInstancedIds.Clear();
+            NavigationStore.ConnectionsByRoomPair.Clear();
 
             OnMeshesReset?.Invoke();
         }

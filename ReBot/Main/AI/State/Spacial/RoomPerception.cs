@@ -1,7 +1,5 @@
 ﻿using MapGeneration;
-using ReBot.Main.AI.State.Movement.Pathfinding;
-using ReBot.Navigation.Mesh;
-using System.Linq;
+using ReBot.Navigation;
 using UnityEngine;
 
 namespace ReBot.Main.AI.State.Spacial;
@@ -15,8 +13,6 @@ internal struct RoomPerception(int botCount)
             var bot = BotStore.Bots[botIdx];
 
             var prevRoomWithin = bot.RoomStore.PrevRoomWithin;
-            var cellWithinResult = PathfindingStore.CellWithins[botIdx];
-            var prevCellWithinResult = PathfindingStore.PrevCellWithins[botIdx];
 
             var playerPosition = bot.PlayerStore.Position;
             if (playerPosition.TryGetRoom(out var roomWithin))
@@ -27,34 +23,28 @@ internal struct RoomPerception(int botCount)
                     bot.RoomStore.RoomLastVisitTime[prevRoomWithin.GetInstanceID()] = Time.time;
                 }
 
-                if (cellWithinResult != prevCellWithinResult || !cellWithinResult.HasValue)
+                bot.RoomStore.RoomEnterInstanceIds.Clear();
+                bot.RoomStore.RoomEnterLocations.Clear();
+                bot.RoomStore.RoomExitLocations.Clear();
+                bot.RoomStore.RoomExitIsWithins.Clear();
+                bot.RoomStore.RoomIsElevations.Clear();
+
+                foreach (var connectedRoom in roomWithin.ConnectedRooms)
                 {
-                    bot.RoomStore.RoomEnterInstanceIds.Clear();
-                    bot.RoomStore.RoomEnterLocations.Clear();
-                    bot.RoomStore.RoomExitLocations.Clear();
-                    bot.RoomStore.RoomExitIsWithins.Clear();
-                    bot.RoomStore.RoomIsElevations.Clear();
+                    var connectionPosition = NavigationStore.ConnectionsByRoomPair[(roomWithin, connectedRoom)];
+                    var roomDirection = Vector3.Normalize(connectedRoom.transform.position - roomWithin.transform.position);
+                    var roomEnterPosition = connectionPosition + roomDirection * 2f;
+                    var roomExitPosition = connectionPosition - roomDirection * 1f;
 
-                    foreach (var localCell in NavigationMesh.LocalMeshesByRoom[roomWithin.gameObject].Cells)
-                    {
-                        var transformCell = new TransformCell(localCell, roomWithin.transform);
-                        foreach (var foreignCell in NavigationMesh.ForeignConnectedCells[transformCell])
-                        {
-                            var adjacentForeignCell = foreignCell.AdjacentCells.First();
-                            var room = adjacentForeignCell.Transform.GetComponent<RoomIdentifier>();
-                            if (room != roomWithin)
-                            {
-                                bot.RoomStore.RoomEnterInstanceIds.Add(room.GetInstanceID());
-                                bot.RoomStore.RoomEnterLocations.Add(adjacentForeignCell.MeanPosition);
-                                bot.RoomStore.RoomExitLocations.Add(transformCell.MeanPosition);
+                    bot.RoomStore.RoomEnterInstanceIds.Add(connectedRoom.GetInstanceID());
+                    bot.RoomStore.RoomEnterLocations.Add(roomEnterPosition);
+                    bot.RoomStore.RoomExitLocations.Add(roomExitPosition);
 
-                                var roomExitIsWithin = cellWithinResult.HasValue && cellWithinResult.Value == transformCell;
-                                var roomIsElevation = !NavigationMesh.ForeignConnectedCellEdges[transformCell].ContainsKey(foreignCell);
-                                bot.RoomStore.RoomExitIsWithins.Add(roomExitIsWithin);
-                                bot.RoomStore.RoomIsElevations.Add(roomIsElevation);
-                            }
-                        }
-                    }
+                    var roomExitIsWithin = Vector3.SqrMagnitude(playerPosition - roomExitPosition) < Mathf.Pow(2f + 2f, 2f);
+                    bot.RoomStore.RoomExitIsWithins.Add(roomExitIsWithin);
+
+                    var roomIsElevation = false;
+                    bot.RoomStore.RoomIsElevations.Add(roomIsElevation);
                 }
             }
 

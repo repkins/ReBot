@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using DrawableLine;
+using System.Linq;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.AI;
@@ -19,7 +20,9 @@ internal static class PathfindingSystem
             var startingPos = bot.PlayerStore.Position;
             var targetPos = position;
 
-            if (!NavMesh.CalculatePath(startingPos, targetPos, NavMesh.AllAreas, PathfindingStore.NavMeshPaths[botIdx]))
+            var navMeshPath = PathfindingStore.NavMeshPaths[botIdx];
+
+            if (!NavMesh.CalculatePath(startingPos, targetPos, NavMesh.AllAreas, navMeshPath))
             {
                 outClosestPositions.Add((new(botIdx), targetPos, default));
                 PathfindingStore.GoalPositions[botIdx] = targetPos;
@@ -28,10 +31,12 @@ internal static class PathfindingSystem
             }
 
             var needsJump = false;
-            var closestPosition = PathfindingStore.NavMeshPaths[botIdx].corners.First();
+            var closestPosition = navMeshPath.corners.Skip(1).First();
 
             outClosestPositions.Add((new(botIdx), closestPosition, needsJump));
             PathfindingStore.GoalPositions[botIdx] = targetPos;
+
+            DrawableLines.GenerateLine(navMeshPath.corners);
         }
     }
 }

@@ -161,6 +161,7 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
         ObstacleStore.DoorObstacleEmergencyReleaseHasPositions.Clear();
         ObstacleStore.DoorObstacleEmergencyReleasePositions.Clear();
         ObstacleStore.ObstaclesByInstanceId.Clear();
+        ObstacleStore.InstanceIdsByObstacle.Clear();
         ObstacleStore.ObstaclesByCell.Clear();
         ObstacleStore.CellsByObstacle.Clear();
 
