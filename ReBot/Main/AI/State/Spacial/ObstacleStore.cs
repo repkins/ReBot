@@ -1,6 +1,5 @@
 ﻿using Interactables.Interobjects;
 using Interactables.Interobjects.DoorUtils;
-using ReBot.Navigation.Mesh;
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
@@ -18,13 +17,7 @@ internal struct ObstacleStore() : IDisposable
     public static readonly NativeHashMap<int, ObstacleRef> ObstaclesByInstanceId = new(8, Allocator.Persistent);
     public static readonly Dictionary<ObstacleRef, int> InstanceIdsByObstacle = [];
 
-    [Obsolete]
-    internal static readonly Dictionary<TransformCell, ObstacleRef> ObstaclesByCell = [];
-    [Obsolete]
-    internal static readonly Dictionary<ObstacleRef, TransformCell> CellsByObstacle = [];
-
-    public static readonly NativeList<ObstacleRef> ElevationObstacles = new(Allocator.Persistent);
-
+    public static readonly NativeHashMap<(Vector3 From, Vector3 To), ObstacleRef> ElevationTravelObstaclesByLink = new(5, Allocator.Persistent);
     public static readonly NativeList<ObstacleRef> ElevationTravelObstacles = new(Allocator.Persistent);
     public static readonly NativeList<Vector3> ElevationTravelEnterLocations = new(Allocator.Persistent);
     public static readonly List<ElevatorPanel> ElevationTravelInteractPanels = [];
@@ -32,6 +25,7 @@ internal struct ObstacleStore() : IDisposable
     public static NativeList<bool> ElevationTravelInteractAbles = new(Allocator.Persistent);
     public static NativeList<Vector3> ElevationTravelChamberLocations = new(Allocator.Persistent);
 
+    public static readonly NativeHashMap<Vector3, ObstacleRef> ElevationCallObstaclesByEnterPosition = new(5, Allocator.Persistent);
     public static readonly NativeList<ObstacleRef> ElevationCallObstacles = new(Allocator.Persistent);
     public static readonly NativeList<Vector3> ElevationCallInteractLocations = new(Allocator.Persistent);
     public static readonly List<ElevatorPanel> ElevationCallInteractPanels = [];

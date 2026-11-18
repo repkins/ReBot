@@ -77,8 +77,21 @@ namespace ReBot.Navigation
                 }
 
                 var doorGameObject = door.gameObject;
-
                 var navMeshModifier = doorGameObject.AddComponent<NavMeshModifier>();
+                navMeshModifier.ignoreFromBuild = true;
+            }
+
+            var elevatorGroups = Enum.GetValues(typeof(ElevatorGroup));
+            foreach (ElevatorGroup group in elevatorGroups)
+            {
+                if (!ElevatorChamber.TryGetChamber(group, out var chamber))
+                {
+                    Debug.LogWarning($"Could not get elevator chamber of group {group}");
+                    continue;
+                }
+
+                var elevatorGameObject = chamber.gameObject;
+                var navMeshModifier = elevatorGameObject.AddComponent<NavMeshModifier>();
                 navMeshModifier.ignoreFromBuild = true;
             }
 
@@ -148,6 +161,62 @@ namespace ReBot.Navigation
                 NavigationStore.ConnectionsByRoomPair.Add((connector.Rooms[1], connector.Rooms[0]), connectionPosition);
             }
 
+            Debug.Log($"Adding tesla gate obstacles");
+            foreach (var teslaGate in TeslaGate.AllGates)
+            {
+                Debug.Log($"{teslaGate.Room.gameObject.name}, {teslaGate.gameObject.name}");
+
+                var instanceId = teslaGate.GetInstanceID();
+                NavigationStore.TeslaGateObstaclesByInstanceId.Add(instanceId, teslaGate.transform);
+            }
+
+            Debug.Log($"Connecting elevator destinations and adding elevation obstacles.");
+            foreach (ElevatorGroup group in elevatorGroups)
+            {
+                var elevatorDoors = ElevatorDoor.GetDoorsForGroup(group);
+                if (elevatorDoors.Count != 2)
+                {
+                    Debug.LogWarning($"Irregular elevator level count ({elevatorDoors.Count}) of group {group}");
+                    continue;
+                }
+
+                if (!ElevatorChamber.TryGetChamber(group, out var chamber))
+                {
+                    Debug.LogWarning($"Could not get elevator chamber of group {group}");
+                    continue;
+                }
+
+                Span<Transform> doorTransforms = [elevatorDoors[0].transform, elevatorDoors[1].transform];
+                Span<Vector3> doorPositions = [doorTransforms[0].position, doorTransforms[1].position];
+                Span<Vector3> doorForwards = [doorTransforms[0].forward, doorTransforms[1].forward];
+
+                // Connect
+                var elevationMeshLink = mapgenRoot.AddComponent<NavMeshLink>();
+                var link0Position = doorPositions[0] + doorForwards[0];
+                var link1Position = doorPositions[1] + doorForwards[1];
+                elevationMeshLink.startPoint = mapgenRoot.transform.InverseTransformPoint(link0Position);
+                elevationMeshLink.endPoint = mapgenRoot.transform.InverseTransformPoint(link1Position);
+                elevationMeshLink.costModifier = 5f;
+                elevationMeshLink.bidirectional = true;
+
+                Debug.Log($"{group} elevation nav link added between {link0Position} and {link1Position}");
+
+                // Add elevation obstacles
+                var panelAt0 = elevatorDoors[0].GetComponentInChildren<ElevatorPanel>();
+                var panelAt1 = elevatorDoors[1].GetComponentInChildren<ElevatorPanel>();
+
+                var travelPanel = chamber.GetComponentInChildren<ElevatorPanel>();
+
+                var enter0Position = doorPositions[0] + Vector3.up - doorForwards[0] * 2f;
+                var enter1Position = doorPositions[1] + Vector3.up - doorForwards[1] * 2f;
+
+                NavigationStore.ElevationObstacles.Add(((link0Position, enter0Position), (link1Position, enter1Position), panelAt1, travelPanel));
+                NavigationStore.ElevationObstacles.Add(((link1Position, enter1Position), (link0Position, enter0Position), panelAt0, travelPanel));
+
+                Debug.Log($"{group} elevation obstacles added between call panels at {panelAt0.transform.position} and {panelAt1.transform.position} with travel panel at {travelPanel.transform.position}");
+            }
+            Debug.Log($"Adding obstacles and connecting rooms finished.");
+
             OnMeshesConnected?.Invoke();
         }
 
@@ -163,8 +232,16 @@ namespace ReBot.Navigation
                 UnityEngine.Object.Destroy(navMeshSurface);
             }
 
+            var navMeshLinks = mapgenRoot.gameObject.GetComponents<NavMeshLink>();
+            foreach (var link in navMeshLinks)
+            {
+                UnityEngine.Object.Destroy(link);
+            }
+
             NavigationStore.SolidObstaclesByInstancedIds.Clear();
             NavigationStore.ConnectionsByRoomPair.Clear();
+            NavigationStore.ElevationObstacles.Clear();
+            NavigationStore.TeslaGateObstaclesByInstanceId.Clear();
 
             OnMeshesReset?.Invoke();
         }

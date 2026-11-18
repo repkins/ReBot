@@ -3,6 +3,7 @@ using LabApi.Features.Wrappers;
 using MEC;
 using System;
 using System.Collections.Generic;
+using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -39,20 +40,32 @@ internal static class NavigationVisualizer
         {
             Span<int> vertexIndices = [
                 triangulation.indices[idx + 0],
-                        triangulation.indices[idx + 1],
-                        triangulation.indices[idx + 2],
-                    ];
+                triangulation.indices[idx + 1],
+                triangulation.indices[idx + 2],
+            ];
             Vector3[] vertexPositions = [
                 triangulation.vertices[vertexIndices[0]],
-                        triangulation.vertices[vertexIndices[1]],
-                        triangulation.vertices[vertexIndices[2]],
-                        triangulation.vertices[vertexIndices[0]]
+                triangulation.vertices[vertexIndices[1]],
+                triangulation.vertices[vertexIndices[2]],
+                triangulation.vertices[vertexIndices[0]]
             ];
 
             if (Vector3.Distance(vertexPositions[0], Player.Position) > 10f)
             {
                 continue;
             }
+
+            DrawableLines.GenerateLine(1f, vertexPositions);
+        }
+
+        var mapgenRoot = GameObject.Find("MapgenRoot");
+        var navMeshLinks = mapgenRoot.GetComponents<NavMeshLink>();
+        foreach (var navMeshLink in navMeshLinks)
+        {
+            Vector3[] vertexPositions = [
+                mapgenRoot.transform.TransformPoint(navMeshLink.startPoint),
+                mapgenRoot.transform.TransformPoint(navMeshLink.endPoint)
+            ];
 
             DrawableLines.GenerateLine(1f, vertexPositions);
         }
