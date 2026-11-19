@@ -116,8 +116,11 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
             ObstacleStore.DoorObstaclePermissions.Add(default);
             ObstacleStore.ElevationTravelObstaclesByLink.Add((fromDestination.Link, toDestination.Link), travelObstacleRef);
 
+            var travelExitPosition = fromDestination.Link;
             var travelEnterPosition = fromDestination.Enter;
             ObstacleStore.ElevationTravelObstacles.Add(travelObstacleRef);
+
+            ObstacleStore.ElevationTravelExitLocations.Add(travelExitPosition);
             ObstacleStore.ElevationTravelEnterLocations.Add(travelEnterPosition);
             ObstacleStore.ElevationTravelInteractPanels.Add(travelPanel);
             ObstacleStore.ElevationTravelInteractAbles.Add(default);
@@ -154,6 +157,7 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
 
         ObstacleStore.ElevationTravelObstaclesByLink.Clear();
         ObstacleStore.ElevationTravelObstacles.Clear();
+        ObstacleStore.ElevationTravelExitLocations.Clear();
         ObstacleStore.ElevationTravelEnterLocations.Clear();
         ObstacleStore.ElevationTravelInteractPanels.Clear();
         ObstacleStore.ElevationTravelInteractAbles.Clear();

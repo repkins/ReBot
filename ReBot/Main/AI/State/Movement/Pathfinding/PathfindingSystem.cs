@@ -19,6 +19,7 @@ internal static class PathfindingSystem
 
             var startingPos = bot.PlayerStore.Position;
             var targetPos = position;
+            var previousGoalPos = PathfindingStore.GoalPositions[botIdx];
 
             var navMeshPath = PathfindingStore.NavMeshPaths[botIdx];
 
@@ -26,6 +27,13 @@ internal static class PathfindingSystem
             {
                 outClosestPositions.Add((new(botIdx), targetPos, default));
                 PathfindingStore.GoalPositions[botIdx] = targetPos;
+
+                if (previousGoalPos != targetPos)
+                {
+                    Debug.LogWarning($"Failed to calculate path for bot {botIdx} from {startingPos} to {targetPos}");
+                }
+
+                DrawableLines.GenerateSphere(targetPos, .1f, Color.red);
 
                 continue;
             }

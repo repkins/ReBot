@@ -7,7 +7,7 @@ namespace ReBot.Main.AI.Decision.Target;
 
 internal struct Elevator() : ITarget
 {
-    public NativeList<Vector3> Locations { get; } = ObstacleStore.ElevationTravelEnterLocations;
+    public NativeList<Vector3> Locations { get; } = ObstacleStore.ElevationTravelExitLocations;
 
     public ActionEnum Enum { get; } = ActionEnum.Elevator;
 }

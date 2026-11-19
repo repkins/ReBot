@@ -20,6 +20,7 @@ internal struct ObstacleStore() : IDisposable
     public static readonly NativeHashMap<(Vector3 From, Vector3 To), ObstacleRef> ElevationTravelObstaclesByLink = new(5, Allocator.Persistent);
     public static readonly NativeList<ObstacleRef> ElevationTravelObstacles = new(Allocator.Persistent);
     public static readonly NativeList<Vector3> ElevationTravelEnterLocations = new(Allocator.Persistent);
+    public static readonly NativeList<Vector3> ElevationTravelExitLocations = new(Allocator.Persistent);
     public static readonly List<ElevatorPanel> ElevationTravelInteractPanels = [];
     public static NativeList<Vector3> ElevationTravelInteractLocations = new(Allocator.Persistent);
     public static NativeList<bool> ElevationTravelInteractAbles = new(Allocator.Persistent);

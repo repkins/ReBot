@@ -10,12 +10,16 @@ internal struct TravelOnElevator(BotRef botRef)
 
     NativeList<ObstacleRef> elevationTravelObstacles = ObstacleStore.ElevationTravelObstacles;
     NativeList<Vector3> elevationTravelEnterLocations = ObstacleStore.ElevationTravelEnterLocations;
+    NativeList<Vector3> elevationTravelExitLocations = ObstacleStore.ElevationTravelExitLocations;
     NativeList<Vector3> elevationTravelChamberLocations = ObstacleStore.ElevationTravelChamberLocations;
     NativeList<Vector3> elevationTravelInteractLocations = ObstacleStore.ElevationTravelInteractLocations;
     NativeList<bool> elevationTravelInteractAbles = ObstacleStore.ElevationTravelInteractAbles;
 
+    NativeHashMap<Vector3, ObstacleRef> obstaclesByTarget = botRef.Value.ObstacleStore.ObstaclesByTarget;
+
     NativeReference<(bool, Vector3)> interactPositionRef = botRef.Value.InteractionStore.InteractWithPositionRef;
     NativeReference<(bool, Vector3)> lookAtPositionRef = botRef.Value.MovementStore.LookAtPositionRef;
+    NativeReference<(bool, Vector3)> moveToPositionRef = botRef.Value.MovementStore.MoveToPositionRef;
 
     public bool TryGetElevationIdx(ObstacleRef obstacleRef, out int elevationIdx)
     {
@@ -38,23 +42,38 @@ internal struct TravelOnElevator(BotRef botRef)
 
     public void Enabling(int elevationIdx, NativeList<BeliefRef> beliefsToEnable)
     {
-        var elevationChamberPosition = elevationTravelChamberLocations[elevationIdx];
-        var elevationTravelInteractAble = elevationTravelInteractAbles[elevationIdx];
-
-        var dist = Vector3.Distance(elevationChamberPosition, playerPosition);
-        if (dist < 1f)
+        var playerToChamberDist = Vector3.Distance(elevationTravelChamberLocations[elevationIdx], playerPosition);
+        if (playerToChamberDist < 1f)
         {
             var travelInteractPosition = elevationTravelInteractLocations[elevationIdx];
             lookAtPositionRef.Value = (true, travelInteractPosition);
 
-            if (elevationTravelInteractAble)
+            if (elevationTravelInteractAbles[elevationIdx])
             {
                 interactPositionRef.Value = (true, travelInteractPosition);
             }
         }
         else
         {
-            beliefsToEnable.Add(new(BeliefEnum.WithinElevator, elevationIdx));
+            var elevationTravelEnterPosition = elevationTravelEnterLocations[elevationIdx];
+            var elevatorRange = Vector3.Distance(elevationTravelEnterPosition, elevationTravelExitLocations[elevationIdx]);
+            var playerToEnterDist = Vector3.Distance(playerPosition, elevationTravelEnterPosition);
+
+            if (playerToEnterDist < elevatorRange)
+            {
+                if (!obstaclesByTarget.TryGetValue(elevationTravelEnterPosition, out var obstacle2Ref))
+                {
+                    moveToPositionRef.Value = (true, elevationTravelEnterPosition);
+                }
+                else
+                {
+                    beliefsToEnable.Add(new(BeliefEnum.UnobstructingObstacle, obstacle2Ref.Idx));
+                }
+            }
+            else
+            {
+                beliefsToEnable.Add(new(BeliefEnum.WithinElevator, elevationIdx));
+            }
         }
     }
 }
