@@ -210,8 +210,21 @@ namespace ReBot.Navigation
                 var enter0Position = doorPositions[0] + Vector3.up - doorForwards[0] * 2f;
                 var enter1Position = doorPositions[1] + Vector3.up - doorForwards[1] * 2f;
 
-                NavigationStore.ElevationObstacles.Add(((link0Position, enter0Position), (link1Position, enter1Position), panelAt1, travelPanel));
-                NavigationStore.ElevationObstacles.Add(((link1Position, enter1Position), (link0Position, enter0Position), panelAt0, travelPanel));
+                var link0PositionRounded = link0Position with { y = Mathf.RoundToInt(link0Position.y) };
+                var link0PositionBelow = link0PositionRounded - Vector3.down;
+
+                var link1PositionRounded = link1Position with { y = Mathf.RoundToInt(link1Position.y) };
+                var link1PositionBelow = link1PositionRounded - Vector3.down;
+
+                NavigationStore.ElevationObstacles.Add(((link0PositionRounded, enter0Position), (link1PositionRounded, enter1Position), panelAt1, travelPanel));
+                NavigationStore.ElevationObstacles.Add(((link0PositionBelow, enter0Position), (link1PositionBelow, enter1Position), panelAt1, travelPanel));
+                NavigationStore.ElevationObstacles.Add(((link0PositionRounded, enter0Position), (link1PositionBelow, enter1Position), panelAt1, travelPanel));
+                NavigationStore.ElevationObstacles.Add(((link0PositionBelow, enter0Position), (link1PositionRounded, enter1Position), panelAt1, travelPanel));
+
+                NavigationStore.ElevationObstacles.Add(((link1PositionRounded, enter1Position), (link0PositionRounded, enter0Position), panelAt0, travelPanel));
+                NavigationStore.ElevationObstacles.Add(((link1PositionBelow, enter1Position), (link0PositionBelow, enter0Position), panelAt0, travelPanel));
+                NavigationStore.ElevationObstacles.Add(((link1PositionRounded, enter1Position), (link0PositionBelow, enter0Position), panelAt0, travelPanel));
+                NavigationStore.ElevationObstacles.Add(((link1PositionBelow, enter1Position), (link0PositionRounded, enter0Position), panelAt0, travelPanel));
 
                 Debug.Log($"{group} elevation obstacles added between call panels at {panelAt0.transform.position} and {panelAt1.transform.position} with travel panel at {travelPanel.transform.position}");
             }

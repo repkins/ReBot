@@ -252,7 +252,10 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
                     var cornerPosition = navMeshCorners[idx];
                     var prevCornerPosition = navMeshCorners[idx - 1];
 
-                    if (ObstacleStore.ElevationTravelObstaclesByLink.TryGetValue((prevCornerPosition, cornerPosition), out var travelObstacleRef))
+                    var cornerPositionFloored = cornerPosition with { y = Mathf.FloorToInt(cornerPosition.y) };
+                    var prevCornerPositionFloored = prevCornerPosition with { y = Mathf.FloorToInt(prevCornerPosition.y) };
+
+                    if (ObstacleStore.ElevationTravelObstaclesByLink.TryGetValue((prevCornerPositionFloored, cornerPositionFloored), out var travelObstacleRef))
                     {
                         obstacleBots[botIdx].AddElevationTravelObstacle(travelObstacleRef, currentGoalPos);
                     }
