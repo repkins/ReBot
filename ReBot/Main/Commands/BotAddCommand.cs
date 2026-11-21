@@ -1,5 +1,6 @@
 using CommandSystem;
 using NetworkManagerUtils.Dummies;
+using PlayerRoles;
 using ReBot.Main.AI;
 using System;
 
@@ -17,9 +18,12 @@ namespace ReBot.Main.Commands
 		public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
 		{
             var botIdx = BotStore.Bots.Count;
-            DummyUtils.SpawnDummy($"ReBot{botIdx}");
+            var hub = DummyUtils.SpawnDummy($"ReBot{botIdx}");
 
-			response = "Done.";
+            // TODO: 
+            hub.roleManager.ServerSetRole(RoleTypeId.Scp049, RoleChangeReason.None);
+
+            response = "Done.";
 			return true;
 		}
 	}

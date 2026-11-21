@@ -12,39 +12,52 @@ internal static class PathfindingSystem
 
     public static void Process(NativeList<(BotRef, Vector3, bool)> outClosestPositions)
     {
-        foreach (var (botRef, position) in PathfindingStore.DestinationPositions)
+        foreach (var (botRef, targetPos) in PathfindingStore.DestinationPositions)
         {
             var bot = botRef.Value;
             var botIdx = botRef.Idx;
 
             var startingPos = bot.PlayerStore.Position;
-            var targetPos = position;
             var previousGoalPos = PathfindingStore.GoalPositions[botIdx];
 
-            var navMeshPath = PathfindingStore.NavMeshPaths[botIdx];
-
-            if (!NavMesh.CalculatePath(startingPos, targetPos, NavMesh.AllAreas, navMeshPath))
+            if (bot.Hub.GetComponent<NavMeshAgent>() is not NavMeshAgent navMeshAgent)
             {
-                outClosestPositions.Add((new(botIdx), targetPos, default));
-                PathfindingStore.GoalPositions[botIdx] = targetPos;
+                navMeshAgent = bot.Hub.gameObject.AddComponent<NavMeshAgent>();
+                navMeshAgent.baseOffset = startingPos.y - bot.Hub.transform.position.y;
 
-                if (previousGoalPos != targetPos)
+                if (!navMeshAgent.isOnNavMesh)
                 {
-                    Debug.LogWarning($"Failed to calculate path for bot {botIdx} from {startingPos} to {targetPos}");
+                    Object.Destroy(navMeshAgent);
+                    continue;
                 }
+            }
 
-                DrawableLines.GenerateSphere(targetPos, .1f, Color.red);
+            if (navMeshAgent.SetDestination(targetPos))
+            {
+                navMeshAgent.isStopped = true;
+            }
 
+            if (navMeshAgent.pathPending)
+            {
                 continue;
             }
 
-            var needsJump = false;
-            var closestPosition = navMeshPath.corners.Skip(1).First();
+            if (navMeshAgent.hasPath)
+            {
+                var needsJump = false;
+                var closestPosition = navMeshAgent.steeringTarget;
+                outClosestPositions.Add((new(botIdx), closestPosition, needsJump));
 
-            outClosestPositions.Add((new(botIdx), closestPosition, needsJump));
+                PathfindingStore.NavMeshPaths[botIdx] = navMeshAgent.path;
+            }
+            else
+            {
+                outClosestPositions.Add((new(botIdx), targetPos, default));
+
+                DrawableLines.GenerateSphere(targetPos, .1f, Color.red);
+            }
+
             PathfindingStore.GoalPositions[botIdx] = targetPos;
-
-            DrawableLines.GenerateLine(navMeshPath.corners);
         }
     }
 }
