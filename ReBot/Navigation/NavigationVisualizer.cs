@@ -3,6 +3,7 @@ using LabApi.Features.Wrappers;
 using MEC;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -55,19 +56,28 @@ internal static class NavigationVisualizer
                 continue;
             }
 
-            DrawableLines.GenerateLine(1f, vertexPositions);
+            DrawableLines.GenerateLine(1f, Color.yellow, vertexPositions);
         }
 
         var mapgenRoot = GameObject.Find("MapgenRoot");
         var navMeshLinks = mapgenRoot.GetComponents<NavMeshLink>();
         foreach (var navMeshLink in navMeshLinks)
         {
+            var startTransform = navMeshLink.startTransform ? navMeshLink.startTransform : navMeshLink.transform;
+            var endTransform = navMeshLink.endTransform ? navMeshLink.endTransform : navMeshLink.transform;
             Vector3[] vertexPositions = [
-                mapgenRoot.transform.TransformPoint(navMeshLink.startPoint),
-                mapgenRoot.transform.TransformPoint(navMeshLink.endPoint)
+                startTransform.TransformPoint(navMeshLink.startPoint),
+                endTransform.TransformPoint(navMeshLink.endPoint)
             ];
 
-            DrawableLines.GenerateLine(1f, vertexPositions);
+            var lineColor = Color.yellow;
+
+            if (!NavMesh.IsLinkValid(navMeshLink.Instance))
+            {
+                lineColor = Color.red;
+            }
+
+            DrawableLines.GenerateLine(1f, lineColor, vertexPositions);
         }
     }
 

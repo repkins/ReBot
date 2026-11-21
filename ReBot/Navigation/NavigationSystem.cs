@@ -91,21 +91,28 @@ namespace ReBot.Navigation
                 }
 
                 var elevatorGameObject = chamber.gameObject;
+
+                var elevatorNavMeshSurface = elevatorGameObject.AddComponent<NavMeshSurface>();
+                elevatorNavMeshSurface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
+                elevatorNavMeshSurface.collectObjects = CollectObjects.Children;
+                elevatorNavMeshSurface.layerMask = LayerMask.GetMask("Default", "Fence");
+                elevatorNavMeshSurface.BuildNavMesh();
+
                 var navMeshModifier = elevatorGameObject.AddComponent<NavMeshModifier>();
                 navMeshModifier.ignoreFromBuild = true;
             }
 
             var mapgenRoot = GameObject.Find("MapgenRoot");
-            var navMeshSurface = mapgenRoot.AddComponent<NavMeshSurface>();
-            navMeshSurface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
-            navMeshSurface.collectObjects = CollectObjects.All;
-            navMeshSurface.layerMask = LayerMask.GetMask("Default", "Fence", "Glass");
+            var mapNavMeshSurface = mapgenRoot.AddComponent<NavMeshSurface>();
+            mapNavMeshSurface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
+            mapNavMeshSurface.collectObjects = CollectObjects.All;
+            mapNavMeshSurface.layerMask = LayerMask.GetMask("Default", "Fence", "Glass");
 
-            Debug.Log($"navMeshSurface.useGeometry = {navMeshSurface.useGeometry}");
-            Debug.Log($"navMeshSurface.collectObjects = {navMeshSurface.collectObjects}");
-            Debug.Log($"navMeshSurface.layerMask = {navMeshSurface.layerMask}");
+            Debug.Log($"navMeshSurface.useGeometry = {mapNavMeshSurface.useGeometry}");
+            Debug.Log($"navMeshSurface.collectObjects = {mapNavMeshSurface.collectObjects}");
+            Debug.Log($"navMeshSurface.layerMask = {mapNavMeshSurface.layerMask}");
 
-            var buildSettings = navMeshSurface.GetBuildSettings();
+            var buildSettings = mapNavMeshSurface.GetBuildSettings();
             Debug.Log($"buildSettings.agentRadius = {buildSettings.agentRadius}");
             Debug.Log($"buildSettings.agentHeight = {buildSettings.agentHeight}");
             Debug.Log($"buildSettings.agentClimb = {buildSettings.agentClimb}");
@@ -115,7 +122,7 @@ namespace ReBot.Navigation
             Debug.Log($"buildSettings.minRegionArea = {buildSettings.minRegionArea}");
 
             Debug.Log($"Building navigation mesh.");
-            navMeshSurface.BuildNavMesh();
+            mapNavMeshSurface.BuildNavMesh();
 
             Debug.Log($"Adding door obstacles.");
             foreach (var door in DoorVariant.AllDoors)
@@ -190,18 +197,45 @@ namespace ReBot.Navigation
                 Span<Vector3> doorPositions = [doorTransforms[0].position, doorTransforms[1].position];
                 Span<Vector3> doorForwards = [doorTransforms[0].forward, doorTransforms[1].forward];
 
+                var chamberDestDoorPosition = chamber.DestinationDoor.transform.position;
+                var chamberDestDoorForward = chamber.DestinationDoor.transform.forward;
+
+                // 
                 // Connect
-                var elevationMeshLink = mapgenRoot.AddComponent<NavMeshLink>();
-                var link0Position = doorPositions[0] + doorForwards[0];
-                var link1Position = doorPositions[1] + doorForwards[1];
-                elevationMeshLink.startPoint = mapgenRoot.transform.InverseTransformPoint(link0Position);
-                elevationMeshLink.endPoint = mapgenRoot.transform.InverseTransformPoint(link1Position);
-                elevationMeshLink.costModifier = 5f;
-                elevationMeshLink.bidirectional = true;
+                //
 
-                Debug.Log($"{group} elevation nav link added between {link0Position} and {link1Position}");
+                var link0PositionInside = chamberDestDoorPosition - chamberDestDoorForward;
+                var link0PositionOutside = doorPositions[0] + doorForwards[0];
 
+                var elevationMeshLink0 = mapgenRoot.AddComponent<NavMeshLink>();
+                elevationMeshLink0.startTransform = chamber.transform;
+                elevationMeshLink0.startPoint = chamber.transform.InverseTransformPoint(link0PositionInside);
+                elevationMeshLink0.endPoint = mapgenRoot.transform.InverseTransformPoint(link0PositionOutside);
+                elevationMeshLink0.costModifier = 5f;
+                elevationMeshLink0.bidirectional = true;
+
+                var elevationMeshLink0Valid = NavMesh.IsLinkValid(elevationMeshLink0.Instance);
+
+                Debug.Log($"{group} elevation nav link added between {link0PositionInside} and {link0PositionOutside} which is {(elevationMeshLink0Valid ? "valid": "invalid")}");
+
+                var link1PositionInside = chamberDestDoorPosition - chamberDestDoorForward;
+                var link1PositionOutside = doorPositions[1] + doorForwards[1];
+
+                var elevationMeshLink1 = mapgenRoot.AddComponent<NavMeshLink>();
+                elevationMeshLink1.startTransform = chamber.transform;
+                elevationMeshLink1.startPoint = chamber.transform.InverseTransformPoint(link1PositionInside);
+                elevationMeshLink1.endPoint = mapgenRoot.transform.InverseTransformPoint(link1PositionOutside);
+                elevationMeshLink1.costModifier = 5f;
+                elevationMeshLink1.bidirectional = true;
+
+                var elevationMeshLink1Valid = NavMesh.IsLinkValid(elevationMeshLink1.Instance);
+
+                Debug.Log($"{group} elevation nav link added between {link1PositionInside} and {link1PositionOutside} which is {(elevationMeshLink1Valid ? "valid" : "invalid")}");
+
+                //
                 // Add elevation obstacles
+                //
+
                 var panelAt0 = elevatorDoors[0].GetComponentInChildren<ElevatorPanel>();
                 var panelAt1 = elevatorDoors[1].GetComponentInChildren<ElevatorPanel>();
 
@@ -210,23 +244,23 @@ namespace ReBot.Navigation
                 var enter0Position = doorPositions[0] + Vector3.up - doorForwards[0] * 2f;
                 var enter1Position = doorPositions[1] + Vector3.up - doorForwards[1] * 2f;
 
-                var link0PositionRounded = link0Position with { y = Mathf.RoundToInt(link0Position.y) };
-                var link0PositionBelow = link0PositionRounded - Vector3.down;
+                //var link0PositionRounded = link0Position with { y = Mathf.RoundToInt(link0Position.y) };
+                //var link0PositionBelow = link0PositionRounded - Vector3.down;
 
-                var link1PositionRounded = link1Position with { y = Mathf.RoundToInt(link1Position.y) };
-                var link1PositionBelow = link1PositionRounded - Vector3.down;
+                //var link1PositionRounded = link1Position with { y = Mathf.RoundToInt(link1Position.y) };
+                //var link1PositionBelow = link1PositionRounded - Vector3.down;
 
-                NavigationStore.ElevationObstacles.Add(((link0PositionRounded, enter0Position), (link1PositionRounded, enter1Position), panelAt1, travelPanel));
-                NavigationStore.ElevationObstacles.Add(((link0PositionBelow, enter0Position), (link1PositionBelow, enter1Position), panelAt1, travelPanel));
-                NavigationStore.ElevationObstacles.Add(((link0PositionRounded, enter0Position), (link1PositionBelow, enter1Position), panelAt1, travelPanel));
-                NavigationStore.ElevationObstacles.Add(((link0PositionBelow, enter0Position), (link1PositionRounded, enter1Position), panelAt1, travelPanel));
+                //NavigationStore.ElevationObstacles.Add(((link0PositionRounded, enter0Position), (link1PositionRounded, enter1Position), panelAt1, travelPanel));
+                //NavigationStore.ElevationObstacles.Add(((link0PositionBelow, enter0Position), (link1PositionBelow, enter1Position), panelAt1, travelPanel));
+                //NavigationStore.ElevationObstacles.Add(((link0PositionRounded, enter0Position), (link1PositionBelow, enter1Position), panelAt1, travelPanel));
+                //NavigationStore.ElevationObstacles.Add(((link0PositionBelow, enter0Position), (link1PositionRounded, enter1Position), panelAt1, travelPanel));
 
-                NavigationStore.ElevationObstacles.Add(((link1PositionRounded, enter1Position), (link0PositionRounded, enter0Position), panelAt0, travelPanel));
-                NavigationStore.ElevationObstacles.Add(((link1PositionBelow, enter1Position), (link0PositionBelow, enter0Position), panelAt0, travelPanel));
-                NavigationStore.ElevationObstacles.Add(((link1PositionRounded, enter1Position), (link0PositionBelow, enter0Position), panelAt0, travelPanel));
-                NavigationStore.ElevationObstacles.Add(((link1PositionBelow, enter1Position), (link0PositionRounded, enter0Position), panelAt0, travelPanel));
+                //NavigationStore.ElevationObstacles.Add(((link1PositionRounded, enter1Position), (link0PositionRounded, enter0Position), panelAt0, travelPanel));
+                //NavigationStore.ElevationObstacles.Add(((link1PositionBelow, enter1Position), (link0PositionBelow, enter0Position), panelAt0, travelPanel));
+                //NavigationStore.ElevationObstacles.Add(((link1PositionRounded, enter1Position), (link0PositionBelow, enter0Position), panelAt0, travelPanel));
+                //NavigationStore.ElevationObstacles.Add(((link1PositionBelow, enter1Position), (link0PositionRounded, enter0Position), panelAt0, travelPanel));
 
-                Debug.Log($"{group} elevation obstacles added between call panels at {panelAt0.transform.position} and {panelAt1.transform.position} with travel panel at {travelPanel.transform.position}");
+                //Debug.Log($"{group} elevation obstacles added between call panels at {panelAt0.transform.position} and {panelAt1.transform.position} with travel panel at {travelPanel.transform.position}");
             }
             Debug.Log($"Adding obstacles and connecting rooms finished.");
 
