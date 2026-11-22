@@ -17,16 +17,19 @@ internal struct ObstacleStore() : IDisposable
     public static readonly NativeHashMap<int, ObstacleRef> ObstaclesByInstanceId = new(8, Allocator.Persistent);
     public static readonly Dictionary<ObstacleRef, int> InstanceIdsByObstacle = [];
 
-    public static readonly NativeHashMap<(Vector3 From, Vector3 To), ObstacleRef> ElevationTravelObstaclesByLink = new(5, Allocator.Persistent);
+    public static readonly NativeHashMap<int, ObstacleRef> ElevationTravelObstaclesByLink = new(5, Allocator.Persistent);
     public static readonly NativeList<ObstacleRef> ElevationTravelObstacles = new(Allocator.Persistent);
     public static readonly NativeList<Vector3> ElevationTravelInsideLocations = new(Allocator.Persistent);
+    [Obsolete]
     public static readonly NativeList<Vector3> ElevationTravelOutsideLocations = new(Allocator.Persistent);
     public static readonly List<ElevatorPanel> ElevationTravelInteractPanels = [];
     public static NativeList<Vector3> ElevationTravelInteractLocations = new(Allocator.Persistent);
     public static NativeList<bool> ElevationTravelInteractAbles = new(Allocator.Persistent);
     public static NativeList<Vector3> ElevationTravelChamberLocations = new(Allocator.Persistent);
 
+    [Obsolete]
     public static readonly NativeHashMap<Vector3, ObstacleRef> ElevationCallObstaclesByInsidePosition = new(5, Allocator.Persistent);
+    public static readonly NativeHashMap<int, ObstacleRef> ElevationCallObstaclesByLink = new(5, Allocator.Persistent);
     public static readonly NativeList<ObstacleRef> ElevationCallObstacles = new(Allocator.Persistent);
     public static readonly NativeList<Vector3> ElevationCallInteractLocations = new(Allocator.Persistent);
     public static readonly List<ElevatorPanel> ElevationCallInteractPanels = [];

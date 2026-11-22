@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace ReBot.Navigation;
 
-using DestinationTuple = (Vector3 Outside, Vector3 Inside);
+using DestinationTuple = (Vector3 Outside, Vector3 Inside, int LinkInstanceId);
 
 internal static class NavigationStore
 {

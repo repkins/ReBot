@@ -204,33 +204,41 @@ namespace ReBot.Navigation
                 // Connect
                 //
 
-                var link0PositionInside = chamberDestDoorPosition - chamberDestDoorForward;
-                var link0PositionOutside = doorPositions[0] + doorForwards[0];
+                Span<Vector3> linksPositionInside = stackalloc Vector3[2];
+                Span<Vector3> linksPositionOutside = stackalloc Vector3[2];
+                for (var idx = 0; idx < 2; idx++)
+                {
+                    linksPositionInside[idx] = chamberDestDoorPosition - chamberDestDoorForward;
+                    linksPositionOutside[idx] = doorPositions[idx] + doorForwards[idx];
+                }
 
-                var elevationMeshLink0 = mapgenRoot.AddComponent<NavMeshLink>();
-                elevationMeshLink0.startTransform = chamber.transform;
-                elevationMeshLink0.startPoint = chamber.transform.InverseTransformPoint(link0PositionInside);
-                elevationMeshLink0.endPoint = mapgenRoot.transform.InverseTransformPoint(link0PositionOutside);
-                elevationMeshLink0.costModifier = 5f;
-                elevationMeshLink0.bidirectional = true;
+                Span<(int In, int Out)> navMeshLinkInstanceIds = stackalloc (int, int)[2];
+                for (var idx = 0; idx < 2; idx++)
+                {
+                    // Entering
+                    var elevationMeshLink = mapgenRoot.AddComponent<NavMeshLink>();
+                    elevationMeshLink.startPoint = mapgenRoot.transform.InverseTransformPoint(linksPositionOutside[idx]);
+                    elevationMeshLink.endTransform = chamber.transform;
+                    elevationMeshLink.endPoint = chamber.transform.InverseTransformPoint(linksPositionInside[idx]);
+                    elevationMeshLink.costModifier = 5f;
 
-                var elevationMeshLink0Valid = NavMesh.IsLinkValid(elevationMeshLink0.Instance);
+                    navMeshLinkInstanceIds[idx].In = elevationMeshLink.GetInstanceID();
 
-                Debug.Log($"{group} elevation nav link added between {link0PositionInside} and {link0PositionOutside} which is {(elevationMeshLink0Valid ? "valid": "invalid")}");
+                    var elevationMeshLinkValid = NavMesh.IsLinkValid(elevationMeshLink.Instance);
+                    Debug.Log($"{group} elevation entering nav link added between {linksPositionOutside[idx]} and {linksPositionInside[idx]} which is {(elevationMeshLinkValid ? "valid" : "invalid")}");
 
-                var link1PositionInside = chamberDestDoorPosition - chamberDestDoorForward;
-                var link1PositionOutside = doorPositions[1] + doorForwards[1];
+                    // Exiting
+                    elevationMeshLink = mapgenRoot.AddComponent<NavMeshLink>();
+                    elevationMeshLink.startTransform = chamber.transform;
+                    elevationMeshLink.startPoint = chamber.transform.InverseTransformPoint(linksPositionInside[idx]);
+                    elevationMeshLink.endPoint = mapgenRoot.transform.InverseTransformPoint(linksPositionOutside[idx]);
+                    elevationMeshLink.costModifier = 5f;
 
-                var elevationMeshLink1 = mapgenRoot.AddComponent<NavMeshLink>();
-                elevationMeshLink1.startTransform = chamber.transform;
-                elevationMeshLink1.startPoint = chamber.transform.InverseTransformPoint(link1PositionInside);
-                elevationMeshLink1.endPoint = mapgenRoot.transform.InverseTransformPoint(link1PositionOutside);
-                elevationMeshLink1.costModifier = 5f;
-                elevationMeshLink1.bidirectional = true;
+                    navMeshLinkInstanceIds[idx].Out = elevationMeshLink.GetInstanceID();
 
-                var elevationMeshLink1Valid = NavMesh.IsLinkValid(elevationMeshLink1.Instance);
-
-                Debug.Log($"{group} elevation nav link added between {link1PositionInside} and {link1PositionOutside} which is {(elevationMeshLink1Valid ? "valid" : "invalid")}");
+                    elevationMeshLinkValid = NavMesh.IsLinkValid(elevationMeshLink.Instance);
+                    Debug.Log($"{group} elevation exiting nav link added between {linksPositionInside[idx]} and {linksPositionOutside[idx]} which is {(elevationMeshLinkValid ? "valid" : "invalid")}");
+                }
 
                 //
                 // Add elevation obstacles
@@ -244,10 +252,10 @@ namespace ReBot.Navigation
                 var inside0Position = doorPositions[0] - doorForwards[0] * 2f + Vector3.up;
                 var inside1Position = doorPositions[1] - doorForwards[1] * 2f + Vector3.up;
 
-                NavigationStore.ElevationObstacles.Add(((link0PositionOutside, inside0Position), (link1PositionOutside, inside1Position), panelAt1, travelPanel));
-                NavigationStore.ElevationObstacles.Add(((link1PositionOutside, inside1Position), (link0PositionOutside, inside0Position), panelAt0, travelPanel));
+                NavigationStore.ElevationObstacles.Add(((linksPositionOutside[0], inside0Position, navMeshLinkInstanceIds[0].Out), (linksPositionOutside[1], inside1Position, navMeshLinkInstanceIds[1].In), panelAt1, travelPanel));
+                NavigationStore.ElevationObstacles.Add(((linksPositionOutside[1], inside1Position, navMeshLinkInstanceIds[1].Out), (linksPositionOutside[0], inside0Position, navMeshLinkInstanceIds[0].In), panelAt0, travelPanel));
 
-                //Debug.Log($"{group} elevation obstacles added between call panels at {panelAt0.transform.position} and {panelAt1.transform.position} with travel panel at {travelPanel.transform.position}");
+                Debug.Log($"{group} elevation obstacles added between call panels at {panelAt0.transform.position} and {panelAt1.transform.position} with travel panel at {travelPanel.transform.position}");
             }
             Debug.Log($"Adding obstacles and connecting rooms finished.");
 

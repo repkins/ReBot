@@ -115,13 +115,11 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
             var travelObstaclePosition = toDestination.Inside;
             ObstacleStore.ObstacleLocations.Add(travelObstaclePosition);
             ObstacleStore.DoorObstaclePermissions.Add(default);
-            ObstacleStore.ElevationTravelObstaclesByLink.Add((fromDestination.Outside, toDestination.Outside), travelObstacleRef);
+            ObstacleStore.ElevationTravelObstaclesByLink.Add(toDestination.LinkInstanceId, travelObstacleRef);
 
-            var travelOutsidePosition = fromDestination.Outside;
             var travelInsidePosition = fromDestination.Inside;
             ObstacleStore.ElevationTravelObstacles.Add(travelObstacleRef);
 
-            ObstacleStore.ElevationTravelOutsideLocations.Add(travelOutsidePosition);
             ObstacleStore.ElevationTravelInsideLocations.Add(travelInsidePosition);
             ObstacleStore.ElevationTravelInteractPanels.Add(travelPanel);
             ObstacleStore.ElevationTravelInteractAbles.Add(default);
@@ -133,7 +131,7 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
             var callObstacleRef = new ObstacleRef(ObstacleStore.ObstacleLocations.Length);
             ObstacleStore.ObstacleLocations.Add(callObstaclePosition);
             ObstacleStore.DoorObstaclePermissions.Add(default);
-            ObstacleStore.ElevationCallObstaclesByInsidePosition.Add(travelInsidePosition, callObstacleRef);
+            ObstacleStore.ElevationCallObstaclesByLink.Add(fromDestination.LinkInstanceId, callObstacleRef);
 
             var callInteractPosition = fromCallPanel.GetComponent<Collider>().bounds.center;
             ObstacleStore.ElevationCallObstacles.Add(callObstacleRef);
@@ -158,14 +156,13 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
 
         ObstacleStore.ElevationTravelObstaclesByLink.Clear();
         ObstacleStore.ElevationTravelObstacles.Clear();
-        ObstacleStore.ElevationTravelOutsideLocations.Clear();
         ObstacleStore.ElevationTravelInsideLocations.Clear();
         ObstacleStore.ElevationTravelInteractPanels.Clear();
         ObstacleStore.ElevationTravelInteractAbles.Clear();
         ObstacleStore.ElevationTravelInteractLocations.Clear();
         ObstacleStore.ElevationTravelChamberLocations.Clear();
 
-        ObstacleStore.ElevationCallObstaclesByInsidePosition.Clear();
+        ObstacleStore.ElevationCallObstaclesByLink.Clear();
         ObstacleStore.ElevationCallObstacles.Clear();
         ObstacleStore.ElevationCallInteractLocations.Clear();
         ObstacleStore.ElevationCallInteractPanels.Clear();
@@ -243,38 +240,38 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
         {
             var currentGoalPos = PathfindingStore.GoalPositions[botIdx];
 
-            if (ObstacleStore.ElevationCallObstaclesByInsidePosition.TryGetValue(currentGoalPos, out var callObstacleRef))
+            if (BotStore.Bots[botIdx].Hub.GetComponent<NavMeshAgent>() is NavMeshAgent navMeshAgent
+                && navMeshAgent.nextOffMeshLinkData.valid)
             {
-                var obstaclePosition = ObstacleStore.ObstacleLocations[callObstacleRef.Idx];
-                obstacleBots[botIdx].AddElevationCallObstacle(callObstacleRef, currentGoalPos, obstaclePosition);
-            }
-            else if (BotStore.Bots[botIdx].Hub.GetComponent<NavMeshAgent>() is NavMeshAgent navMeshAgent
-                && navMeshAgent.nextOffMeshLinkData.valid
-                && ObstacleStore.ElevationTravelObstaclesByLink.TryGetValue((navMeshAgent.nextOffMeshLinkData.startPos, navMeshAgent.nextOffMeshLinkData.endPos), out var travelObstacleRef))
-            {
-                obstacleBots[botIdx].AddElevationTravelObstacle(travelObstacleRef, currentGoalPos);
-            }
-            else
-            {
-                var navMeshPath = PathfindingStore.NavMeshPaths[botIdx];
-                var navMeshCorners = navMeshPath.corners;
-                for (int idx = navMeshCorners.Length - 1; idx >= 1; idx--)
+                if (ObstacleStore.ElevationCallObstaclesByLink.TryGetValue(navMeshAgent.nextOffMeshLinkData.owner.GetInstanceID(), out var callObstacleRef))
                 {
-                    var cornerPosition = navMeshCorners[idx];
-                    var prevCornerPosition = navMeshCorners[idx - 1];
+                    var obstaclePosition = ObstacleStore.ObstacleLocations[callObstacleRef.Idx];
+                    obstacleBots[botIdx].AddElevationCallObstacle(callObstacleRef, currentGoalPos, obstaclePosition);
+                }
+                else if (ObstacleStore.ElevationTravelObstaclesByLink.TryGetValue(navMeshAgent.nextOffMeshLinkData.owner.GetInstanceID(), out var travelObstacleRef))
+                {
+                    obstacleBots[botIdx].AddElevationTravelObstacle(travelObstacleRef, currentGoalPos);
+                }
+            }
 
-                    if (Physics.Linecast(prevCornerPosition, cornerPosition, out var hitInfo, LayerMask.GetMask("Door"))
-                        && hitInfo.collider.GetComponentInParent<DoorVariant>() is DoorVariant door
-                        && ObstacleStore.ObstaclesByInstanceId.TryGetValue(door.GetInstanceID(), out var obstacleRef))
+            var navMeshPath = PathfindingStore.NavMeshPaths[botIdx];
+            var navMeshCorners = navMeshPath.corners;
+            for (int idx = navMeshCorners.Length - 1; idx >= 1; idx--)
+            {
+                var cornerPosition = navMeshCorners[idx];
+                var prevCornerPosition = navMeshCorners[idx - 1];
+
+                if (Physics.Linecast(prevCornerPosition, cornerPosition, out var hitInfo, LayerMask.GetMask("Door"))
+                    && hitInfo.collider.GetComponentInParent<DoorVariant>() is DoorVariant door
+                    && ObstacleStore.ObstaclesByInstanceId.TryGetValue(door.GetInstanceID(), out var obstacleRef))
+                {
+                    var obstaclePosition = ObstacleStore.ObstacleLocations[obstacleRef.Idx];
+                    if (obstaclePosition == currentGoalPos)
                     {
-                        var obstaclePosition = ObstacleStore.ObstacleLocations[obstacleRef.Idx];
-                        if (obstaclePosition == currentGoalPos)
-                        {
-                            continue;
-                        }
-
-                        obstacleBots[botIdx].AddSightObstacle(obstacleRef, currentGoalPos, obstaclePosition);
+                        continue;
                     }
+
+                    obstacleBots[botIdx].AddSightObstacle(obstacleRef, currentGoalPos, obstaclePosition);
                 }
             }
         }
