@@ -9,8 +9,8 @@ internal struct TravelOnElevator(BotRef botRef)
     Vector3 playerPosition = botRef.Value.PlayerStore.Position;
 
     NativeList<ObstacleRef> elevationTravelObstacles = ObstacleStore.ElevationTravelObstacles;
-    NativeList<Vector3> elevationTravelEnterLocations = ObstacleStore.ElevationTravelEnterLocations;
-    NativeList<Vector3> elevationTravelExitLocations = ObstacleStore.ElevationTravelExitLocations;
+    NativeList<Vector3> elevationTravelEnterLocations = ObstacleStore.ElevationTravelInsideLocations;
+    NativeList<Vector3> elevationTravelExitLocations = ObstacleStore.ElevationTravelOutsideLocations;
     NativeList<Vector3> elevationTravelChamberLocations = ObstacleStore.ElevationTravelChamberLocations;
     NativeList<Vector3> elevationTravelInteractLocations = ObstacleStore.ElevationTravelInteractLocations;
     NativeList<bool> elevationTravelInteractAbles = ObstacleStore.ElevationTravelInteractAbles;
