@@ -238,40 +238,44 @@ internal struct ObstaclePerception(int botCount, float maxSightRadius, LayerMask
     {
         for (int botIdx = 0; botIdx < botCount; botIdx++)
         {
-            var currentGoalPos = PathfindingStore.GoalPositions[botIdx];
-
             if (BotStore.Bots[botIdx].Hub.GetComponent<NavMeshAgent>() is NavMeshAgent navMeshAgent
-                && navMeshAgent.nextOffMeshLinkData.valid)
+                && !navMeshAgent.pathPending && navMeshAgent.hasPath)
             {
-                if (ObstacleStore.ElevationCallObstaclesByLink.TryGetValue(navMeshAgent.nextOffMeshLinkData.owner.GetInstanceID(), out var callObstacleRef))
-                {
-                    var obstaclePosition = ObstacleStore.ObstacleLocations[callObstacleRef.Idx];
-                    obstacleBots[botIdx].AddElevationCallObstacle(callObstacleRef, currentGoalPos, obstaclePosition);
-                }
-                else if (ObstacleStore.ElevationTravelObstaclesByLink.TryGetValue(navMeshAgent.nextOffMeshLinkData.owner.GetInstanceID(), out var travelObstacleRef))
-                {
-                    obstacleBots[botIdx].AddElevationTravelObstacle(travelObstacleRef, currentGoalPos);
-                }
-            }
+                var currentGoalPos = PathfindingStore.GoalPositions[botIdx];
 
-            var navMeshPath = PathfindingStore.NavMeshPaths[botIdx];
-            var navMeshCorners = navMeshPath.corners;
-            for (int idx = navMeshCorners.Length - 1; idx >= 1; idx--)
-            {
-                var cornerPosition = navMeshCorners[idx];
-                var prevCornerPosition = navMeshCorners[idx - 1];
-
-                if (Physics.Linecast(prevCornerPosition, cornerPosition, out var hitInfo, LayerMask.GetMask("Door"))
-                    && hitInfo.collider.GetComponentInParent<DoorVariant>() is DoorVariant door
-                    && ObstacleStore.ObstaclesByInstanceId.TryGetValue(door.GetInstanceID(), out var obstacleRef))
+                var navMeshLinkData = navMeshAgent.isOnOffMeshLink ? navMeshAgent.currentOffMeshLinkData : navMeshAgent.nextOffMeshLinkData;
+                if (navMeshLinkData.valid)
                 {
-                    var obstaclePosition = ObstacleStore.ObstacleLocations[obstacleRef.Idx];
-                    if (obstaclePosition == currentGoalPos)
+                    if (ObstacleStore.ElevationCallObstaclesByLink.TryGetValue(navMeshLinkData.owner.GetInstanceID(), out var callObstacleRef))
                     {
-                        continue;
+                        var obstaclePosition = ObstacleStore.ObstacleLocations[callObstacleRef.Idx];
+                        obstacleBots[botIdx].AddElevationCallObstacle(callObstacleRef, currentGoalPos, obstaclePosition);
                     }
+                    else if (ObstacleStore.ElevationTravelObstaclesByLink.TryGetValue(navMeshLinkData.owner.GetInstanceID(), out var travelObstacleRef))
+                    {
+                        obstacleBots[botIdx].AddElevationTravelObstacle(travelObstacleRef, currentGoalPos);
+                    }
+                }
 
-                    obstacleBots[botIdx].AddSightObstacle(obstacleRef, currentGoalPos, obstaclePosition);
+                var navMeshPath = navMeshAgent.path;
+                var navMeshCorners = navMeshPath.corners;
+                for (int idx = navMeshCorners.Length - 1; idx >= 1; idx--)
+                {
+                    var cornerPosition = navMeshCorners[idx];
+                    var prevCornerPosition = navMeshCorners[idx - 1];
+
+                    if (Physics.Linecast(prevCornerPosition, cornerPosition, out var hitInfo, LayerMask.GetMask("Door"))
+                        && hitInfo.collider.GetComponentInParent<DoorVariant>() is DoorVariant door
+                        && ObstacleStore.ObstaclesByInstanceId.TryGetValue(door.GetInstanceID(), out var obstacleRef))
+                    {
+                        var obstaclePosition = ObstacleStore.ObstacleLocations[obstacleRef.Idx];
+                        if (obstaclePosition == currentGoalPos)
+                        {
+                            continue;
+                        }
+
+                        obstacleBots[botIdx].AddSightObstacle(obstacleRef, currentGoalPos, obstaclePosition);
+                    }
                 }
             }
         }

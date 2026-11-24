@@ -221,6 +221,8 @@ namespace ReBot.Navigation
                     elevationMeshLink.endTransform = chamber.transform;
                     elevationMeshLink.endPoint = chamber.transform.InverseTransformPoint(linksPositionInside[idx]);
                     elevationMeshLink.costModifier = 5f;
+                    elevationMeshLink.bidirectional = false;
+                    elevationMeshLink.autoUpdate = true;
 
                     navMeshLinkInstanceIds[idx].In = elevationMeshLink.GetInstanceID();
 
@@ -233,6 +235,8 @@ namespace ReBot.Navigation
                     elevationMeshLink.startPoint = chamber.transform.InverseTransformPoint(linksPositionInside[idx]);
                     elevationMeshLink.endPoint = mapgenRoot.transform.InverseTransformPoint(linksPositionOutside[idx]);
                     elevationMeshLink.costModifier = 5f;
+                    elevationMeshLink.bidirectional = false;
+                    elevationMeshLink.autoUpdate = true;
 
                     navMeshLinkInstanceIds[idx].Out = elevationMeshLink.GetInstanceID();
 
