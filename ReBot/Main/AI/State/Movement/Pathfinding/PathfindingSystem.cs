@@ -45,6 +45,11 @@ internal static class PathfindingSystem
                     Debug.Log($"Could not sample position {targetPos} for agent {navMeshAgent}");
                 }
 
+                if (navMeshAgent.isOnOffMeshLink)
+                {
+                    navMeshAgent.Warp(startingPos);
+                }
+
                 navMeshAgent.ResetPath();
                 if (navMeshAgent.SetDestination(targetPos))
                 {

@@ -33,8 +33,8 @@ internal struct RoomPerception(int botCount)
                 {
                     var connectionPosition = NavigationStore.ConnectionsByRoomPair[(roomWithin, connectedRoom)];
                     var roomDirection = Vector3.Normalize(connectedRoom.transform.position - roomWithin.transform.position);
-                    var roomEnterPosition = connectionPosition + roomDirection * 1f;
-                    var roomExitPosition = connectionPosition - roomDirection * 1f;
+                    var roomEnterPosition = connectionPosition + roomDirection * 2f;
+                    var roomExitPosition = connectionPosition - roomDirection * 2f;
 
                     bot.RoomStore.RoomEnterInstanceIds.Add(connectedRoom.GetInstanceID());
                     bot.RoomStore.RoomEnterLocations.Add(roomEnterPosition);
