@@ -34,7 +34,10 @@ internal static class PathfindingSystem
             var targetPos = goalPos;
             var previousGoalPos = PathfindingStore.GoalPositions[botIdx];
 
-            if (targetPos != previousGoalPos)
+            var needsNewPath = navMeshAgent.hasPath 
+                && navMeshAgent.isOnOffMeshLink && !navMeshAgent.currentOffMeshLinkData.valid;
+
+            if (targetPos != previousGoalPos || needsNewPath)
             {
                 if (NavMesh.SamplePosition(targetPos, out var hit, 1f, NavMesh.AllAreas))
                 {
@@ -79,7 +82,7 @@ internal static class PathfindingSystem
                 }
 
                 var needsJump = false;
-                var closestPosition = navMeshAgent.steeringTarget;
+                var closestPosition = navMeshAgent.steeringTarget + (navMeshAgent.steeringTarget - navMeshAgent.nextPosition);
                 outClosestPositions.Add((new(botIdx), closestPosition, needsJump));
             }
             else
