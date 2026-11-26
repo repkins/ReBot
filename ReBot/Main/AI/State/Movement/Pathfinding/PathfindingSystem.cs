@@ -17,12 +17,12 @@ internal static class PathfindingSystem
             var bot = botRef.Value;
             var botIdx = botRef.Idx;
 
-            var startingPos = bot.PlayerStore.Position;
+            var playerPos = bot.PlayerStore.Position;
 
             if (bot.Hub.GetComponent<NavMeshAgent>() is not NavMeshAgent navMeshAgent)
             {
                 navMeshAgent = bot.Hub.gameObject.AddComponent<NavMeshAgent>();
-                navMeshAgent.baseOffset = startingPos.y - bot.Hub.transform.position.y;
+                navMeshAgent.baseOffset = playerPos.y - bot.Hub.transform.position.y;
 
                 if (!navMeshAgent.isOnNavMesh)
                 {
@@ -50,7 +50,7 @@ internal static class PathfindingSystem
 
                 if (navMeshAgent.isOnOffMeshLink)
                 {
-                    navMeshAgent.Warp(startingPos);
+                    navMeshAgent.Warp(playerPos);
                 }
 
                 navMeshAgent.ResetPath();
@@ -72,7 +72,7 @@ internal static class PathfindingSystem
 
             if (navMeshAgent.hasPath)
             {
-                var playerPositionWithOffset = startingPos + Vector3.down * navMeshAgent.baseOffset;
+                var playerPositionWithOffset = playerPos + Vector3.down * navMeshAgent.baseOffset;
                 if (navMeshAgent.isOnOffMeshLink && Vector3.Distance(playerPositionWithOffset, navMeshAgent.steeringTarget) < .1f)
                 {
                     Debug.Log($"Completing off mesh link for agent {navMeshAgent}");
@@ -82,7 +82,7 @@ internal static class PathfindingSystem
                 }
 
                 var needsJump = false;
-                var closestPosition = navMeshAgent.steeringTarget + (navMeshAgent.steeringTarget - navMeshAgent.nextPosition);
+                var closestPosition = navMeshAgent.steeringTarget;
                 outClosestPositions.Add((new(botIdx), closestPosition, needsJump));
             }
             else
