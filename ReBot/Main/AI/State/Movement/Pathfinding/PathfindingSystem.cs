@@ -23,6 +23,8 @@ internal static class PathfindingSystem
             {
                 navMeshAgent = bot.Hub.gameObject.AddComponent<NavMeshAgent>();
                 navMeshAgent.baseOffset = playerPos.y - bot.Hub.transform.position.y;
+                navMeshAgent.updatePosition = false;
+                navMeshAgent.updateRotation = false;
 
                 if (!navMeshAgent.isOnNavMesh)
                 {
@@ -80,6 +82,8 @@ internal static class PathfindingSystem
                     navMeshAgent.CompleteOffMeshLink();
                     navMeshAgent.isStopped = true;
                 }
+
+                navMeshAgent.nextPosition = playerPos;
 
                 var needsJump = false;
                 var closestPosition = navMeshAgent.steeringTarget;

@@ -1,5 +1,6 @@
 ﻿using MEC;
 using PlayerRoles;
+using PlayerRoles.FirstPersonControl;
 using ReBot.Main.AI.Decision;
 using ReBot.Main.AI.State;
 using ReBot.Main.AI.State.Blink;
@@ -13,6 +14,7 @@ using ReBot.Main.AI.State.Snap;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace ReBot.Main.AI;
 
@@ -43,11 +45,27 @@ internal static class BotSystem
     {
         BotStore.AddBotPlayer(hub);
 
+        void positionUpdatedAction() => OnPositionUpdated(hub);
+        FirstPersonMovementModule.OnPositionUpdated += positionUpdatedAction;
+        BotStore.PositionUpdatedActions.Add(hub, positionUpdatedAction);
+
         Debug.Log($"Bot player added: {hub}");
+    }
+
+    private static void OnPositionUpdated(ReferenceHub hub)
+    {
+        var navMeshAgent = hub.GetComponent<NavMeshAgent>();
+        if (navMeshAgent && navMeshAgent.hasPath)
+        {
+            navMeshAgent.nextPosition = hub.transform.position;
+        }
     }
 
     public static void RemoveBotPlayer(ReferenceHub userHub, BotRef botRef)
     {
+        FirstPersonMovementModule.OnPositionUpdated -= BotStore.PositionUpdatedActions[userHub];
+        BotStore.PositionUpdatedActions.Remove(userHub);
+
         BotStore.RemoveBotPlayer(botRef);
 
         Debug.Log($"Bot player removed: {userHub}");

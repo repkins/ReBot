@@ -1,5 +1,6 @@
 ﻿using ReBot.Main.AI.Decision;
 using ReBot.Main.AI.State.Movement.Pathfinding;
+using System;
 using System.Collections.Generic;
 
 namespace ReBot.Main.AI;
@@ -8,6 +9,7 @@ internal static class BotStore
 {
     public readonly static List<Bot> Bots = [];
     public readonly static Dictionary<ReferenceHub, BotRef> BotHubRefs = [];
+    public readonly static Dictionary<ReferenceHub, Action> PositionUpdatedActions = [];
 
     public static void AddBotPlayer(ReferenceHub referenceHub)
     {
