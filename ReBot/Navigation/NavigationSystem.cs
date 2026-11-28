@@ -3,6 +3,7 @@ using Interactables.Interobjects.DoorUtils;
 using LabApi.Events.Arguments.ServerEvents;
 using LabApi.Events.Handlers;
 using MapGeneration;
+using MapGeneration.RoomConnectors;
 using MapGeneration.StaticHelpers;
 using MEC;
 using System;
@@ -162,6 +163,12 @@ namespace ReBot.Navigation
             foreach (var connector in RoomConnector.AllConnectors)
             {
                 var connectionPosition = connector.transform.position + Vector3.up;  // assuming pivot point is located at the bottom of all connectors
+
+                var spawnableConnector = connector.GetComponent<SpawnableRoomConnector>();
+                if (spawnableConnector.SpawnData.ConnectorType == SpawnableRoomConnectorType.ClutterTankSupportedShelf)
+                {
+                    connectionPosition -= connector.transform.right;
+                }
 
                 // Add to connections
                 NavigationStore.ConnectionsByRoomPair.Add((connector.Rooms[0], connector.Rooms[1]), connectionPosition);

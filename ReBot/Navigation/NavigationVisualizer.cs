@@ -3,7 +3,6 @@ using LabApi.Features.Wrappers;
 using MEC;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -16,8 +15,11 @@ internal static class NavigationVisualizer
     public static Vector3? CachedPosition { get; set; }
     public static NavMeshPath TracePath { get; } = new NavMeshPath();
 
+    private static readonly float linesDurationSeconds = 1f;
+
     private static CoroutineHandle handle;
     private static CoroutineHandle handle2;
+    private static CoroutineHandle handle3;
 
     public static void Enable(Player player)
     {
@@ -25,13 +27,14 @@ internal static class NavigationVisualizer
 
         handle = Timing.RunCoroutine(RunOncePerSecond(UpdateTriangulation));
         handle2 = Timing.RunCoroutine(RunOncePerSecond(UpdatePath));
+        handle3 = Timing.RunCoroutine(RunOncePerSecond(UpdateConnectors));
     }
 
     public static void Disable()
     {
         Player = null;
 
-        Timing.KillCoroutines(handle, handle2);
+        Timing.KillCoroutines(handle, handle2, handle3);
     }
 
     private static void UpdateTriangulation()
@@ -56,7 +59,7 @@ internal static class NavigationVisualizer
                 continue;
             }
 
-            DrawableLines.GenerateLine(1f, Color.yellow, vertexPositions);
+            DrawableLines.GenerateLine(linesDurationSeconds, Color.green, vertexPositions);
         }
 
         var mapgenRoot = GameObject.Find("MapgenRoot");
@@ -77,7 +80,7 @@ internal static class NavigationVisualizer
                 lineColor = Color.red;
             }
 
-            DrawableLines.GenerateLine(1f, lineColor, vertexPositions);
+            DrawableLines.GenerateLine(linesDurationSeconds, lineColor, vertexPositions);
         }
     }
 
@@ -88,7 +91,15 @@ internal static class NavigationVisualizer
             return;
         }
 
-        DrawableLines.GenerateLine(1f, Color.blue, TracePath.corners);
+        DrawableLines.GenerateLine(linesDurationSeconds, Color.blue, TracePath.corners);
+    }
+
+    private static void UpdateConnectors()
+    {
+        foreach (var (roomPair, connectionPosition) in NavigationStore.ConnectionsByRoomPair)
+        {
+            DrawableLines.GenerateSphere(connectionPosition, .1f, linesDurationSeconds);
+        }
     }
 
     private static IEnumerator<float> RunEachFrame(Action action)
