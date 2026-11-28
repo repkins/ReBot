@@ -41,6 +41,11 @@ internal static class PathfindingSystem
 
             if (targetPos != previousGoalPos || needsNewPath)
             {
+                if (!navMeshAgent.isOnNavMesh)
+                {
+                    Debug.Log($"Agent is not on navmesh {navMeshAgent}");
+                }
+
                 if (NavMesh.SamplePosition(targetPos, out var hit, 1f, NavMesh.AllAreas))
                 {
                     targetPos = hit.position;
@@ -50,10 +55,7 @@ internal static class PathfindingSystem
                     Debug.Log($"Could not sample position {targetPos} for agent {navMeshAgent}");
                 }
 
-                if (navMeshAgent.isOnOffMeshLink)
-                {
-                    navMeshAgent.Warp(playerPos);
-                }
+                navMeshAgent.Warp(playerPos);
 
                 navMeshAgent.ResetPath();
                 if (navMeshAgent.SetDestination(targetPos))
@@ -82,8 +84,6 @@ internal static class PathfindingSystem
                     navMeshAgent.CompleteOffMeshLink();
                     navMeshAgent.isStopped = true;
                 }
-
-                navMeshAgent.nextPosition = playerPos;
 
                 var needsJump = false;
                 var closestPosition = navMeshAgent.steeringTarget;
